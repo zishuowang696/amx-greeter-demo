@@ -1,0 +1,21 @@
+name: docker
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build demo image
+        run: docker build -t amx-greeter-demo .
+      - name: Run demo and assert output
+        run: |
+          docker run -d --rm --name demo amx-greeter-demo
+          sleep 3
+          docker logs demo | tee /tmp/demo.log
+          grep -q "Hello from AMX in Docker" /tmp/demo.log
+          docker exec demo ubus -s /var/run/ubus/ubus.sock -t 2 list | grep -qx Greeter
+          docker stop demo
