@@ -1,0 +1,8 @@
+{
+  "user": "demo",
+  "publish": ["*"],
+  "subscribe": ["*"],
+  "access": {
+    "*": { "methods": ["*"] }
+  }
+}

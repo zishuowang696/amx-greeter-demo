@@ -41,7 +41,6 @@ fetch https://gitlab.com/prpl-foundation/components/ambiorix/libraries/libamxj.g
 fetch https://gitlab.com/prpl-foundation/components/ambiorix/libraries/libamxrt.git "$SRC/libamxrt" fd9d3b0131fd9aaaf3f0f2f3e9353d7d0aed582f
 fetch https://gitlab.com/prpl-foundation/components/ambiorix/applications/amxrt.git "$SRC/amxrt" 195d6e6053a1e1e9e20fadaeb8f9f7f5898ec70b
 fetch https://gitlab.com/prpl-foundation/components/ambiorix/modules/amxb_backends/amxb_ubus.git "$SRC/amxb_ubus" c74118306cd9f4557de2a8963c21f6d4a94c6f89
-fetch https://gitlab.com/prpl-foundation/components/ambiorix/examples/datamodel/greeter_plugin.git "$SRC/greeter_plugin" f7b3dae7e9e55684265fafe97ab6c55ee5520448
 
 build_cmake "$SRC/libubox" -DBUILD_LUA=OFF -DBUILD_EXAMPLES=OFF
 build_cmake "$SRC/ubus" -DBUILD_LUA=OFF
@@ -55,8 +54,7 @@ build_make "$SRC/libamxj"
 build_make "$SRC/libamxrt"
 build_make "$SRC/amxrt"
 build_make "$SRC/amxb_ubus"
-build_make "$SRC/greeter_plugin"
 
 ldconfig 2>/dev/null || true
 
-echo "AMX + greeter installed"
+echo "AMX base installed"

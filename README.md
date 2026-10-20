@@ -10,9 +10,17 @@ Companion article:
 ## Quick start
 
 ```bash
-docker build -t amx-greeter-demo .
-docker run --rm -it amx-greeter-demo
+git clone https://github.com/zishuowang696/amx-greeter-demo.git
+cd amx-greeter-demo
+./build.sh
+docker run --rm -it amx-greeter-demo:ubuntu
 ```
+
+`./build.sh` builds two images:
+
+1. `amx-base:ubuntu` — AMX base components + ubus + ACL;
+2. `amx-greeter-demo:ubuntu` — `FROM amx-base`, clones `greeter_plugin` from Git,
+   compiles it, and adds the entrypoint/demo.
 
 The container starts `ubusd` and `greeter`, then runs a scripted demo:
 
@@ -29,30 +37,48 @@ ubus -s /var/run/ubus/ubus.sock list
 ubus -s /var/run/ubus/ubus.sock call Greeter _get '{}'
 ```
 
-## Stages
+## Images
 
-`Dockerfile` has three stages:
+### 1. `amx-base:ubuntu`
 
-1. **build** — Ubuntu 22.04 + toolchain; clones pinned commits of
-   libubox, ubus, libamxc/amxp/amxd/amxb/amxs/amxo/amxj/amxrt,
-   amxb_ubus, amxrt and greeter_plugin; compiles/install them.
-2. **deploy** — runtime libraries + `/opt/amx`; runs a real smoke test:
-   start `ubusd`, start `greeter`, call `_set` / `say` / `History.2 _get`.
-   The build fails if registration or the calls fail.
-3. **runtime** — the deploy image plus `entrypoint.sh` / `demo.sh`.
+`base/Dockerfile` builds the AMX base components only:
 
-Pinned commits are in [`build-amx.sh`](build-amx.sh).
+- libubox, ubus
+- libamxc, libamxp, libamxd, libamxb, libamxs, libamxo, libamxj, libamxrt
+- amxrt app, amxb_ubus
+- headers + libs (so examples can compile against the base)
+- `demo` user + `/etc/ubus-acl/demo.json`
 
-## Why root?
+It runs `ubusd` with `-A /etc/ubus-acl`; the ACL lets `demo` publish/subscribe
+and access all methods. The ACL file must be owned by root and mode `0644`;
+`ubusd` silently rejects group/other-writable ACL files.
 
-The container runs as root by default. That matters: with a non-root client
-and no ubusd ACL, `ubus_add_object` fails (and `amxb_ubus` does not surface
-the error). For a non-root demo, configure a ubusd ACL that allows publish.
-This is the same trap documented in the article.
+Pinned base commits are in [`base/build-amx.sh`](base/build-amx.sh).
+
+### 2. `amx-greeter-demo:ubuntu`
+
+`examples/greeter/Dockerfile` starts `FROM amx-base:ubuntu`:
+
+- `git clone` the official `greeter_plugin` (pinned commit), then `make`;
+- runtime copies only ODL + `greeter.so` + scripts;
+- `ubusd` runs as root, `amxrt` runs as **`demo`** (non-root), proving the ACL;
+- `demo.sh` calls `ubus` through `runuser -u demo`.
+
+The example build does not recompile AMX; it reuses the base image headers/libs.
+
+## Why the ACL matters
+
+`ubusd` runs as root, but `amxrt` runs as **`demo`**. Without an ACL that allows
+`demo` to publish, `ubus_add_object` returns `2` (`INVALID_ARGUMENT`) and
+`amxb_ubus` does not surface the error: `ubus list` is just empty.
+
+The demo ships `/etc/ubus-acl/demo.json` and starts `ubusd -A /etc/ubus-acl`.
+The file must be root-owned and mode `0644`; group/other-writable ACL files are
+rejected by `ubusd` (again, silently).
 
 ## Notes
 
-- Base image: Ubuntu 22.04 (multi-stage; final image ~187 MB in the tested build).
+- Base image: Ubuntu 22.04 (multi-stage; `amx-base:ubuntu` ~189 MB, example image ~187 MB in the tested build).
 - AMX/greeter source is cloned at build time, not vendored.
 - `ubus` method names in this stack are `_get` / `_set`, not the README's
   `get` / `set`.
@@ -62,3 +88,11 @@ This is the same trap documented in the article.
 
 The Dockerfile/scripts are MIT (see `LICENSE`). Cloned upstream projects keep
 their own licenses.
+
+## Docker Hub blocked?
+
+`build.sh` takes the base OS image as an env var:
+
+```bash
+BASE_OS_IMAGE=docker.m.daocloud.io/library/ubuntu:22.04 ./build.sh
+```

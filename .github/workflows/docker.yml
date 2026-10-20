@@ -9,13 +9,18 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
-      - name: Build demo image
-        run: docker build -t amx-greeter-demo .
+      - name: Build AMX base image
+        run: docker build -f base/Dockerfile -t amx-base:ubuntu .
+      - name: Build greeter example image
+        run: |
+          docker build -f examples/greeter/Dockerfile \
+            --build-arg BASE_IMAGE=amx-base:ubuntu \
+            -t amx-greeter-demo:ubuntu .
       - name: Run demo and assert output
         run: |
-          docker run -d --rm --name demo amx-greeter-demo
+          docker run -d --rm --name demo amx-greeter-demo:ubuntu
           sleep 3
           docker logs demo | tee /tmp/demo.log
           grep -q "Hello from AMX in Docker" /tmp/demo.log
-          docker exec demo ubus -s /var/run/ubus/ubus.sock -t 2 list | grep -qx Greeter
+          docker exec demo runuser -u demo -- ubus -s /var/run/ubus/ubus.sock -t 2 list | grep -qx Greeter
           docker stop demo
