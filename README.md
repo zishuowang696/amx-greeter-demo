@@ -16,7 +16,12 @@ cd amx-greeter-demo
 docker run --rm -it amx-greeter-demo:ubuntu
 ```
 
-`./build.sh` builds two images:
+`./build.sh` builds both images (or run the two steps separately):
+
+```bash
+./build-base.sh       # amx-base:ubuntu
+./build-example.sh    # amx-greeter-demo:ubuntu, FROM amx-base
+```
 
 1. `amx-base:ubuntu` — AMX base components + ubus + ACL;
 2. `amx-greeter-demo:ubuntu` — `FROM amx-base`, clones `greeter_plugin` from Git,
