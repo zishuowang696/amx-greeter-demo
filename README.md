@@ -42,6 +42,19 @@ ubus -s /var/run/ubus/ubus.sock list
 ubus -s /var/run/ubus/ubus.sock call Greeter _get '{}'
 ```
 
+## LED virtual-node test
+
+The `tr181-led` unit tests use the plugin's mock LEDs (`test/common/mock_leds`)
+instead of `/sys/class/leds`:
+
+```bash
+docker build -f examples/led/Dockerfile -t amx-led-test .
+docker run --rm amx-led-test
+```
+
+It builds `libamxm`, `libsahtrace` and `tr181-led`, then runs the upstream
+unit tests. Expected: **4 suites / 14 tests / 0 failures**.
+
 ## Images
 
 ### 1. `amx-base:ubuntu`

@@ -16,6 +16,10 @@ jobs:
           docker build -f examples/greeter/Dockerfile \
             --build-arg BASE_IMAGE=amx-base:ubuntu \
             -t amx-greeter-demo:ubuntu .
+      - name: Build LED virtual-node test
+        run: docker build -f examples/led/Dockerfile -t amx-led-test .
+      - name: Run LED virtual-node test
+        run: docker run --rm amx-led-test
       - name: Run demo and assert output
         run: |
           docker run -d --rm --name demo amx-greeter-demo:ubuntu
